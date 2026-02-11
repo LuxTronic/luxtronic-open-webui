@@ -1838,7 +1838,7 @@ async def _fetch_prompt_suggestions_for_tenant(
     if not isinstance(response, dict):
         return None
 
-    data = response.get("data")
+    data = response.get("data", response)
     if not isinstance(data, dict):
         return None
 
@@ -1894,7 +1894,14 @@ async def _get_prompt_suggestions_for_user(
     if not tenant or not tenant.s3_bucket:
         return default_suggestions
 
-    if not entry or not entry.get("suggestions"):
+    tenant_suggestions = entry.get("suggestions") if isinstance(entry, dict) else None
+    should_fetch = (
+        not entry
+        or not tenant_suggestions
+        or tenant_suggestions == default_suggestions
+    )
+
+    if should_fetch:
         entry = await _fetch_prompt_suggestions_for_tenant(tenant.s3_bucket, user=user)
         if entry:
             suggestions_map[tenant_id] = entry
