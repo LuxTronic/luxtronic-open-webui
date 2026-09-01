@@ -68,4 +68,5 @@ const statuslineEntry = entry("statusline.js");
 // No resolvable install: silent no-op. Resolved but failed: surface it.
 if (statuslineEntry) import(pathToFileURL(statuslineEntry).href).then((m) => m.main()).catch((e) => {
   console.error(`graft statusline failed (${statuslineEntry}): ${(e && e.message) || e}`);
+  process.exitCode = 1;
 });

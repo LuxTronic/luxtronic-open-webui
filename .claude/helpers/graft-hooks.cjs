@@ -69,4 +69,5 @@ const hooksEntry = entry("hooks.js");
 // it, so a broken install cannot silently disable the integration.
 if (hooksEntry) import(pathToFileURL(hooksEntry).href).then((m) => m.main(process.argv[2])).catch((e) => {
   console.error(`graft hook failed (${hooksEntry}): ${(e && e.message) || e}`);
+  process.exitCode = 1;
 });
