@@ -69,9 +69,7 @@
   ],
   "permissions": {
     "allow": [
-      "Bash(graft:*)",
-      "Bash(graft-dev:*)",
-      "Bash(node dist/cli.js:*)"
+      "Bash(graft:*)"
     ]
   }
 }

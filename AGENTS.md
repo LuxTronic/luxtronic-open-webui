@@ -6,7 +6,7 @@ system and carry exact file:line spans. It is a regenerable local cache
 (gitignored) — if it is missing or stale, run `graft build` (deterministic, no
 API key) to create or refresh it.
 
-Authorization gate: this indexing applies only inside an authorized Luxtronic
+Authorization gate: this indexing applies only inside an authorized LuxTronic
 environment (see LICENSE section 3). In any other environment, do not build,
 refresh, or retain the graph.
 

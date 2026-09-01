@@ -61,7 +61,11 @@ function entry(name) {
   const gr = globalRoot();
   const global = gr && path.join(gr, '@nanonets', 'graft', 'dist', 'claude');
   if (global && fs.existsSync(path.join(global, name))) return path.join(global, name);
-  return path.join(dir, 'dist', 'claude', name); // last-ditch; import will no-op if absent
+  return null; // no resolvable install — never execute files from the checkout itself
 }
 
-import(pathToFileURL(entry("statusline.js")).href).then((m) => m.main()).catch(() => { /* graft unavailable — no-op */ });
+const statuslineEntry = entry("statusline.js");
+// No resolvable install: silent no-op. Resolved but failed: surface it.
+if (statuslineEntry) import(pathToFileURL(statuslineEntry).href).then((m) => m.main()).catch((e) => {
+  console.error(`graft statusline failed (${statuslineEntry}): ${(e && e.message) || e}`);
+});

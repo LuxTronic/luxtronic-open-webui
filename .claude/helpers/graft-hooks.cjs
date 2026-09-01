@@ -61,7 +61,12 @@ function entry(name) {
   const gr = globalRoot();
   const global = gr && path.join(gr, '@nanonets', 'graft', 'dist', 'claude');
   if (global && fs.existsSync(path.join(global, name))) return path.join(global, name);
-  return path.join(dir, 'dist', 'claude', name); // last-ditch; import will no-op if absent
+  return null; // no resolvable install — never execute files from the checkout itself
 }
 
-import(pathToFileURL(entry("hooks.js")).href).then((m) => m.main(process.argv[2])).catch(() => { /* graft unavailable — no-op */ });
+const hooksEntry = entry("hooks.js");
+// No resolvable install: intended silent no-op. Resolved but failed: surface
+// it, so a broken install cannot silently disable the integration.
+if (hooksEntry) import(pathToFileURL(hooksEntry).href).then((m) => m.main(process.argv[2])).catch((e) => {
+  console.error(`graft hook failed (${hooksEntry}): ${(e && e.message) || e}`);
+});
