@@ -69,7 +69,13 @@
   ],
   "permissions": {
     "allow": [
-      "Bash(graft:*)"
+      "Bash(graft ask:*)",
+      "Bash(graft grep:*)",
+      "Bash(graft callers:*)",
+      "Bash(graft skeleton:*)",
+      "Bash(graft map:*)",
+      "Bash(graft build:*)",
+      "Bash(graft viz:*)"
     ]
   }
 }

@@ -112,4 +112,5 @@ jobs:
           name: graft-graph
           path: graft
           include-hidden-files: true
+          overwrite: true
           retention-days: 30
