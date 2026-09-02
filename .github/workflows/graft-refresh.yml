@@ -30,11 +30,11 @@ jobs:
     # incremental refreshes after it take minutes.
     timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
 
@@ -44,7 +44,7 @@ jobs:
       # Restoring the previous graph lets --deep replay unchanged files from
       # cache, so each merge only pays LLM cost for what actually changed.
       - name: Restore previous graph
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: graft
           key: graft-${{ github.sha }}
@@ -57,6 +57,7 @@ jobs:
       # LuxTronic/code-of-conduct#148 — using the same org OpenAI account
       # that already processes repository diffs for luxie-tronic reviews.
       - name: Build graph
+        id: build
         env:
           GRAFT_PROVIDER: openai
           # Must be a model the org OpenAI project can access: gpt-5.6-luna
@@ -72,19 +73,28 @@ jobs:
             # --allow-partial tolerates transient per-file failures, but a
             # zero-coverage meaning tier is a broken semantic pass, not a
             # partial one — fail loudly instead of shipping a hollow graph.
+            # Require the coverage marker to exist at all, so a wording
+            # change in graft cannot silently disable this guard.
+            if ! grep -q "meaning coverage:" build.log; then
+              echo "::error::coverage marker missing from build output — guard cannot verify the semantic pass"
+              exit 1
+            fi
             if grep -q "meaning coverage: 0/" build.log; then
               echo "::error::semantic pass produced zero coverage — check GRAFT_MODEL and the API key"
               exit 1
             fi
           else
             echo "::warning::OPENAI_API_KEY secret not available — building structural graph only (no semantic pass)"
+            echo "structural_only=true" >> "$GITHUB_OUTPUT"
             graft build
           fi
 
-      # Save only a known-good graph — a failed build must not poison the
-      # incremental cache restored by later runs.
+      # Save only a known-good semantic graph — a failed build must not
+      # poison the cache, and a structural-only fallback (no key: fork or
+      # unauthorized environment) must publish nothing.
       - name: Save graph cache
-        uses: actions/cache/save@v4
+        if: steps.build.outputs.structural_only != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: graft
           key: graft-${{ github.sha }}
@@ -96,7 +106,8 @@ jobs:
       # (LLM summary cache) in the snapshot — without them it cannot seed
       # another environment.
       - name: Upload graph artifact
-        uses: actions/upload-artifact@v4
+        if: steps.build.outputs.structural_only != 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: graft-graph
           path: graft
