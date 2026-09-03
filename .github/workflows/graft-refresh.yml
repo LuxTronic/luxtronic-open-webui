@@ -67,22 +67,30 @@ jobs:
           GRAFT_MODEL: gpt-5.6-luna
           GRAFT_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          set -o pipefail
+          set -euo pipefail
           if [ -n "$GRAFT_API_KEY" ]; then
             graft build --deep --allow-partial -j 12 2>&1 | tee build.log
             # --allow-partial tolerates transient per-file failures, but a
             # zero-coverage meaning tier is a broken semantic pass, not a
             # partial one — fail loudly instead of shipping a hollow graph.
-            # Require the coverage marker to exist at all, so a wording
-            # change in graft cannot silently disable this guard.
-            if ! grep -q "meaning coverage:" build.log; then
-              echo "::error::coverage marker missing from build output — guard cannot verify the semantic pass"
+            # graft reports the meaning tier two ways: a "meaning coverage: x/y"
+            # line when the deep pass is degraded, and a "meaning: N computed,
+            # …" summary when it completes. Require one of them, so a wording
+            # change cannot silently disable this guard, but do not treat a
+            # healthy build's summary-only output as a failure.
+            if ! grep -qE "meaning coverage:|^ *meaning: [0-9]+ computed" build.log; then
+              echo "::error::no meaning-tier report in build output — guard cannot verify the semantic pass"
               exit 1
             fi
             if grep -q "meaning coverage: 0/" build.log; then
               echo "::error::semantic pass produced zero coverage — check GRAFT_MODEL and the API key"
               exit 1
             fi
+            if grep -qE "^ *meaning: 0 computed, 0 cached" build.log; then
+              echo "::error::semantic pass computed and cached nothing — check GRAFT_MODEL and the API key"
+              exit 1
+            fi
+            echo "::notice::$(grep -oE "meaning coverage: .*|meaning: [0-9]+ computed.*" build.log | tail -1)"
           else
             echo "::warning::OPENAI_API_KEY secret not available — building structural graph only (no semantic pass)"
             echo "structural_only=true" >> "$GITHUB_OUTPUT"
