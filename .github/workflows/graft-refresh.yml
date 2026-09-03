@@ -67,7 +67,7 @@ jobs:
           GRAFT_MODEL: gpt-5.6-luna
           GRAFT_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          set -o pipefail
+          set -euo pipefail
           if [ -n "$GRAFT_API_KEY" ]; then
             graft build --deep --allow-partial -j 12 2>&1 | tee build.log
             # --allow-partial tolerates transient per-file failures, but a
